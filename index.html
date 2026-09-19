@@ -2,341 +2,749 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Number Line Operations Simulation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interactive Number Line Simulation</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --bg-color: #121212;
-            --surface-color: #1e1e1e;
-            --primary-color: #bb86fc;
-            --text-color: #e0e0e0;
-            --axis-color: #ffffff;
-            --ball-color: #03dac6;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
+            background-color: #0f172a; /* slate-900 */
+            color: #f8fafc; /* slate-50 */
+            font-family: 'Inter', system-ui, sans-serif;
+            touch-action: manipulation;
+            overflow-x: hidden;
         }
-
-        h1 {
-            text-align: center;
-            color: var(--primary-color);
-            margin-bottom: 10px;
+        canvas {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
         }
-
-        .controls {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: center;
-            align-items: center;
-            background-color: var(--surface-color);
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 600px;
+        .glow-box {
+            box-shadow: 0 0 40px rgba(14, 165, 233, 0.1); /* sky-500 */
+            border: 1px solid #334155; /* slate-700 */
         }
-
-        input, select, button {
-            background-color: #2c2c2c;
-            color: var(--text-color);
-            border: 1px solid #444;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 16px;
-            outline: none;
+        .control-btn {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        input:focus, select:focus {
-            border-color: var(--primary-color);
-        }
-
-        input[type="number"] {
-            width: 70px;
-            text-align: center;
-        }
-
-        button {
-            background-color: var(--primary-color);
-            color: #000;
-            font-weight: bold;
-            cursor: pointer;
-            transition: transform 0.1s, opacity 0.2s;
-            border: none;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        button:active {
+        .control-btn:active:not(:disabled) {
             transform: scale(0.95);
         }
-
-        .secondary-btn {
-            background-color: transparent;
-            color: var(--primary-color);
-            border: 1px solid var(--primary-color);
+        .control-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(1);
         }
-
-        #explanation {
-            font-size: 1.1rem;
-            min-height: 2em;
-            text-align: center;
-            margin-bottom: 20px;
-            color: #ffb74d;
+        /* Hide arrows on number inputs */
+        input[type="number"]::-webkit-inner-spin-button, 
+        input[type="number"]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
         }
-
-        canvas {
-            background-color: var(--surface-color);
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-            max-width: 100%;
-            width: 800px;
-            height: 300px;
-            display: block;
+        input[type="number"] {
+            -moz-appearance: textfield;
         }
     </style>
 </head>
-<body>
+<body class="min-h-screen flex flex-col items-center py-6 px-4 md:px-8">
 
-    <h1>Interactive Number Line</h1>
-    
-    <div class="controls">
-        <input type="number" id="numA" value="-2" step="1" placeholder="A">
-        <select id="operator">
-            <option value="+">+</option>
-            <option value="-">-</option>
-            <option value="*" selected>×</option>
-            <option value="/">÷</option>
-        </select>
-        <input type="number" id="numB" value="-3" step="1" placeholder="B">
-        <button id="calcBtn">Animate!</button>
-        <button id="downloadBtn" class="secondary-btn">Download App</button>
-    </div>
+    <header class="w-full max-w-6xl flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-sky-400 to-indigo-500 flex items-center justify-center text-white font-bold text-xl shadow-[0_0_15px_rgba(14,165,233,0.5)]">
+                +/-
+            </div>
+            <h1 class="text-2xl md:text-3xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-400 tracking-tight">
+                MathStepper
+            </h1>
+        </div>
+        <button onclick="downloadApp()" class="control-btn bg-slate-800 hover:bg-slate-700 border border-slate-600 text-sky-400 font-semibold py-2 px-5 rounded-xl shadow-lg flex items-center gap-2 text-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+            <span>Save Offline</span>
+        </button>
+    </header>
 
-    <div id="explanation">Set the numbers and click Animate!</div>
+    <main class="w-full max-w-6xl flex flex-col gap-6 flex-grow">
+        
+        <section class="glow-box bg-slate-800/80 rounded-3xl p-6 w-full backdrop-blur-sm">
+            <form id="calc-form" class="flex flex-wrap items-end justify-center gap-4 md:gap-6 w-full">
+                <div class="flex flex-col w-full sm:w-28">
+                    <label class="text-xs text-slate-400 mb-1.5 font-semibold tracking-wider uppercase pl-1">Number 1</label>
+                    <input type="number" id="num1" value="-2" required class="w-full bg-slate-900/50 border border-slate-600 rounded-xl p-3.5 text-center text-2xl font-bold focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-colors shadow-inner">
+                </div>
+                
+                <div class="flex flex-col w-full sm:w-24">
+                    <label class="text-xs text-slate-400 mb-1.5 font-semibold tracking-wider uppercase pl-1 text-center">Operation</label>
+                    <select id="operator" class="w-full bg-slate-900/50 border border-slate-600 rounded-xl p-3.5 text-center text-2xl font-bold focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 appearance-none cursor-pointer text-sky-400 shadow-inner">
+                        <option value="+">+</option>
+                        <option value="-">−</option>
+                        <option value="*" selected>×</option>
+                        <option value="/">÷</option>
+                    </select>
+                </div>
+                
+                <div class="flex flex-col w-full sm:w-28">
+                    <label class="text-xs text-slate-400 mb-1.5 font-semibold tracking-wider uppercase pl-1">Number 2</label>
+                    <input type="number" id="num2" value="-3" required class="w-full bg-slate-900/50 border border-slate-600 rounded-xl p-3.5 text-center text-2xl font-bold focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 transition-colors shadow-inner">
+                </div>
 
-    <canvas id="simCanvas" width="800" height="300"></canvas>
+                <button type="submit" id="start-btn" class="control-btn w-full sm:w-auto mt-4 sm:mt-0 h-[62px] bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-bold py-2 px-10 rounded-xl shadow-[0_4px_20px_rgba(14,165,233,0.3)] hover:shadow-[0_4px_25px_rgba(14,165,233,0.5)] flex items-center justify-center gap-2 text-lg">
+                    <span>Start Simulation</span>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </form>
+        </section>
+
+        <section class="glow-box bg-slate-800/80 rounded-3xl w-full flex flex-col overflow-hidden relative border border-slate-700 flex-grow shadow-2xl min-h-[450px]">
+            
+            <div class="p-6 md:p-8 text-center border-b border-slate-700/50 bg-slate-800/90 z-10 min-h-[140px] flex flex-col justify-center relative">
+                
+                <!-- Playback controls overlay (hidden initially) -->
+                <div id="playback-controls" class="absolute top-4 right-4 flex gap-2 hidden transition-opacity">
+                    <button id="prev-btn" class="control-btn bg-slate-700 hover:bg-slate-600 text-white p-2.5 rounded-lg border border-slate-600 shadow-md">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                    </button>
+                    <button id="next-btn" class="control-btn bg-sky-600 hover:bg-sky-500 text-white px-5 py-2.5 rounded-lg shadow-md font-bold flex items-center gap-1 shadow-[0_0_15px_rgba(14,165,233,0.3)]">
+                        <span>Next Step</span>
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    </button>
+                </div>
+
+                <div class="flex items-center justify-center gap-3 mb-2">
+                    <span id="step-counter" class="text-xs font-bold text-sky-400 tracking-widest uppercase bg-sky-400/10 px-3 py-1 rounded-full hidden">Step 1/5</span>
+                </div>
+                
+                <h2 id="explanation-text" class="text-xl md:text-2xl font-medium text-slate-200 tracking-wide leading-relaxed">
+                    Set your numbers and operation, then click <span class="text-sky-400 font-bold">Start Simulation</span> to begin learning!
+                </h2>
+            </div>
+            
+            <div class="w-full h-[320px] md:h-[400px] relative bg-[#0a0f1c] overflow-hidden" id="canvas-container">
+                <!-- Grid background for canvas area -->
+                <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMjU1LDI1NSwyNTUsMC4wNSkiLz48L3N2Zz4=')]"></div>
+                <canvas id="sim-canvas" class="absolute top-0 left-0 w-full h-full z-10"></canvas>
+            </div>
+        </section>
+
+    </main>
 
     <script>
-        const canvas = document.getElementById('simCanvas');
-        const ctx = canvas.getContext('2d');
-        const explanationEl = document.getElementById('explanation');
+        const form = document.getElementById('calc-form');
+        const num1Input = document.getElementById('num1');
+        const opSelect = document.getElementById('operator');
+        const num2Input = document.getElementById('num2');
         
-        // Audio Context for sound effects
+        const explanationText = document.getElementById('explanation-text');
+        const stepCounter = document.getElementById('step-counter');
+        const playbackControls = document.getElementById('playback-controls');
+        
+        const startBtn = document.getElementById('start-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        
+        const canvas = document.getElementById('sim-canvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvas-container');
+
+        // Simulation State
+        let minBound = -10;
+        let maxBound = 10;
+        let steps = [];
+        let currentStepIdx = -1;
+        
+        // Character (Blob) State
+        let blob = {
+            pos: 0,        // Logical position on number line
+            face: 1,       // 1 (right) or -1 (left)
+            animating: false,
+            animProgress: 0, // 0 to 1
+            animType: null,  // 'jump' or 'turn'
+            startPos: 0,
+            targetPos: 0,
+            startFace: 1,
+            targetFace: 1,
+        };
+
+        let trail = []; // Store past paths
+
+        // Audio setup
         let audioCtx;
-        function playBeep(freq, duration) {
-            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function playSound(type) {
+            if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
-            osc.start();
-            osc.stop(audioCtx.currentTime + duration);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'jump_start') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(300, now + 0.1);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'jump_land') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.3, now + 0.02);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'turn') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.linearRampToValueAtTime(400, now + 0.1);
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.1, now + 0.02);
+                gain.gain.linearRampToValueAtTime(0, now + 0.1);
+                osc.start(now);
+                osc.stop(now + 0.1);
+            } else if (type === 'success') {
+                // Short fanfare
+                [392.00, 523.25, 659.25, 1046.50].forEach((freq, i) => {
+                    const o = audioCtx.createOscillator();
+                    const g = audioCtx.createGain();
+                    o.type = 'square';
+                    o.connect(g);
+                    g.connect(audioCtx.destination);
+                    o.frequency.setValueAtTime(freq, now + i * 0.1);
+                    g.gain.setValueAtTime(0, now + i * 0.1);
+                    g.gain.linearRampToValueAtTime(0.1, now + i * 0.1 + 0.02);
+                    g.gain.exponentialRampToValueAtTime(0.01, now + i * 0.1 + 0.3);
+                    o.start(now + i * 0.1);
+                    o.stop(now + i * 0.1 + 0.3);
+                });
+            } else if (type === 'error') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.start();
+                osc.stop(now + 0.4);
+            }
         }
 
-        let animationQueue = [];
-        let currentAnim = null;
-        let scale = { min: -10, max: 10 };
-        let currentPos = 0;
-
-        function updateScale(valA, valB, result) {
-            let min = Math.min(0, valA, valB, result);
-            let max = Math.max(0, valA, valB, result);
-            let padding = Math.max(2, Math.abs(max - min) * 0.1);
-            scale.min = Math.floor(min - padding);
-            scale.max = Math.ceil(max + padding);
+        function resizeCanvas() {
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvasContainer.clientWidth * dpr;
+            canvas.height = canvasContainer.clientHeight * dpr;
+            ctx.scale(dpr, dpr);
         }
+        window.addEventListener('resize', resizeCanvas);
 
+        // Convert logical number line value to physical X coordinate
         function getX(val) {
-            const padding = 40;
-            const width = canvas.width - padding * 2;
-            const range = scale.max - scale.min;
-            return padding + ((val - scale.min) / range) * width;
+            const padding = 60; 
+            const w = canvas.width / (window.devicePixelRatio || 1); 
+            const range = maxBound - minBound;
+            if (range === 0) return w / 2;
+            const usable = w - (padding * 2);
+            return padding + ((val - minBound) / range) * usable;
         }
 
-        function drawNumberLine() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
-            // Draw axis
+        function drawScene() {
+            const w = canvas.width / (window.devicePixelRatio || 1);
+            const h = canvas.height / (window.devicePixelRatio || 1);
+            const yAxis = h - 80; 
+
+            ctx.clearRect(0, 0, w, h);
+
+            // 1. Draw Axis Line
             ctx.beginPath();
-            ctx.moveTo(20, 200);
-            ctx.lineTo(canvas.width - 20, 200);
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 2;
+            ctx.moveTo(20, yAxis);
+            ctx.lineTo(w - 20, yAxis);
+            ctx.strokeStyle = '#475569'; // slate-600
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
             ctx.stroke();
 
-            // Draw ticks and labels
-            ctx.fillStyle = '#ffffff';
-            ctx.font = '14px sans-serif';
+            // 2. Determine tick step dynamically based on range
+            const range = maxBound - minBound;
+            let step = 1;
+            if (range > 30) step = 5;
+            if (range > 60) step = 10;
+            if (range > 150) step = 20;
+
+            // 3. Draw Ticks and Labels
             ctx.textAlign = 'center';
-            for (let i = scale.min; i <= scale.max; i++) {
-                let x = getX(i);
-                ctx.beginPath();
-                ctx.moveTo(x, 195);
-                ctx.lineTo(x, 205);
-                ctx.stroke();
+            ctx.textBaseline = 'top';
+
+            for (let i = minBound; i <= maxBound; i++) {
+                if (i % step !== 0 && i !== 0) continue; 
                 
-                // Draw numbers (skip some if too crowded)
-                if ((scale.max - scale.min) < 30 || i % 5 === 0 || i === 0) {
-                    ctx.fillText(i, x, 225);
-                }
-            }
-
-            // Highlight Zero
-            ctx.fillStyle = '#03dac6';
-            let zeroX = getX(0);
-            ctx.beginPath();
-            ctx.arc(zeroX, 200, 4, 0, Math.PI * 2);
-            ctx.fill();
-        }
-
-        function animate() {
-            drawNumberLine();
-
-            if (currentAnim) {
-                currentAnim.progress += 0.02; // animation speed
-                if (currentAnim.progress >= 1) {
-                    currentPos = currentAnim.end;
-                    playBeep(400, 0.1);
-                    currentAnim = animationQueue.shift() || null;
-                } else {
-                    let p = currentAnim.progress;
-                    // Parabolic arc interpolation
-                    let x = getX(currentAnim.start) + (getX(currentAnim.end) - getX(currentAnim.start)) * p;
-                    let height = Math.sin(p * Math.PI) * Math.max(30, Math.abs(getX(currentAnim.end) - getX(currentAnim.start)) * 0.3);
-                    let y = 200 - 15 - height;
-
-                    ctx.beginPath();
-                    ctx.arc(x, y, 12, 0, Math.PI * 2);
-                    ctx.fillStyle = '#bb86fc';
-                    ctx.fill();
-                    
-                    // Draw trail/arc
-                    ctx.beginPath();
-                    ctx.moveTo(getX(currentAnim.start), 200);
-                    ctx.quadraticCurveTo(getX(currentAnim.start) + (getX(currentAnim.end) - getX(currentAnim.start)) / 2, 200 - height * 2, x, y + 12);
-                    ctx.strokeStyle = 'rgba(187, 134, 252, 0.5)';
-                    ctx.setLineDash([5, 5]);
-                    ctx.stroke();
-                    ctx.setLineDash([]);
-                }
-            } else {
-                // Idle ball
+                const x = getX(i);
+                
                 ctx.beginPath();
-                ctx.arc(getX(currentPos), 200 - 12, 12, 0, Math.PI * 2);
-                ctx.fillStyle = '#03dac6';
-                ctx.fill();
+                ctx.moveTo(x, yAxis - 10);
+                ctx.lineTo(x, yAxis + 10);
+                
+                if (i === 0) {
+                    ctx.strokeStyle = '#38bdf8'; // sky-400
+                    ctx.lineWidth = 3;
+                    ctx.fillStyle = '#bae6fd'; // sky-200
+                    ctx.font = 'bold 16px Inter, sans-serif';
+                } else {
+                    ctx.strokeStyle = '#64748b'; // slate-500
+                    ctx.lineWidth = 2;
+                    ctx.fillStyle = '#94a3b8'; // slate-400
+                    ctx.font = '14px Inter, sans-serif';
+                }
+                ctx.stroke();
+                ctx.fillText(i.toString(), x, yAxis + 18);
             }
 
-            requestAnimationFrame(animate);
+            // 4. Draw Trails
+            trail.forEach(t => {
+                drawJumpArc(t.startPos, t.endPos, 1, yAxis, 'rgba(56, 189, 248, 0.4)', false);
+            });
+
+            // 5. Calculate Blob Position & Animation State
+            let currX = getX(blob.pos);
+            let currY = yAxis;
+            let currFace = blob.face;
+
+            if (blob.animating) {
+                const p = blob.animProgress;
+                // Ease in-out for smoother motion
+                const ease = p < 0.5 ? 2 * p * p : -1 + (4 - 2 * p) * p;
+
+                if (blob.animType === 'jump') {
+                    // Interpolate X
+                    const sX = getX(blob.startPos);
+                    const eX = getX(blob.targetPos);
+                    currX = sX + (eX - sX) * ease;
+                    
+                    // Interpolate Y (Parabola)
+                    const dist = Math.abs(eX - sX);
+                    const jumpH = Math.min(Math.max(dist * 0.35, 40), 150); // Dynamic height
+                    const yOffset = Math.sin(p * Math.PI) * jumpH;
+                    currY = yAxis - yOffset;
+                    
+                    // Draw the arc being actively formed
+                    drawJumpArc(blob.startPos, blob.targetPos, p, yAxis, '#38bdf8', true);
+
+                } else if (blob.animType === 'turn') {
+                    // Interpolate face scale to simulate 3D turning
+                    // 1 -> 0 -> -1
+                    if (p < 0.5) {
+                        currFace = blob.startFace * (1 - 2*ease);
+                    } else {
+                        currFace = blob.targetFace * (2*(ease - 0.5));
+                    }
+                }
+            }
+
+            // 6. Draw Blob Character
+            drawBlob(currX, currY, currFace);
         }
 
-        document.getElementById('calcBtn').addEventListener('click', () => {
-            if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        function drawJumpArc(logicalStart, logicalEnd, progress, yBase, color, isDashed) {
+            const sX = getX(logicalStart);
+            const eX = getX(logicalEnd);
+            const dist = Math.abs(eX - sX);
+            const jumpH = Math.min(Math.max(dist * 0.35, 40), 150);
+
+            ctx.beginPath();
+            for (let p = 0; p <= progress; p += 0.02) {
+                const cx = sX + (eX - sX) * p;
+                const cy = yBase - (Math.sin(p * Math.PI) * jumpH);
+                if (p === 0) ctx.moveTo(cx, cy);
+                else ctx.lineTo(cx, cy);
+            }
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            if (isDashed) ctx.setLineDash([6, 6]);
+            else ctx.setLineDash([]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        function drawBlob(x, y, faceScale) {
+            // Shadow
+            ctx.beginPath();
+            ctx.ellipse(x, y + 2, 16, 4, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fill();
+
+            // Main Body (Squishy blob)
+            const isJumping = blob.animating && blob.animType === 'jump';
+            const yOffset = 18; // Move up from baseline
+            const stretchX = isJumping ? 0.85 : 1;
+            const stretchY = isJumping ? 1.15 : 1;
+
+            ctx.save();
+            ctx.translate(x, y - yOffset);
+            ctx.scale(stretchX, stretchY);
+
+            // Glow
+            ctx.beginPath();
+            ctx.arc(0, 0, 20, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.2)'; // sky-400 with opacity
+            ctx.fill();
+
+            // Body
+            ctx.beginPath();
+            ctx.arc(0, 0, 16, 0, Math.PI * 2);
+            // Gradient body
+            const grd = ctx.createRadialGradient(-5, -5, 2, 0, 0, 16);
+            grd.addColorStop(0, '#7dd3fc'); // sky-300
+            grd.addColorStop(1, '#0284c7'); // sky-600
+            ctx.fillStyle = grd;
+            ctx.fill();
+
+            // Eyes (Respecting face direction scale for turning effect)
+            // faceScale goes from -1 to 1.
+            const eyeBaseX = 6 * faceScale; 
             
-            const a = parseFloat(document.getElementById('numA').value);
-            const b = parseFloat(document.getElementById('numB').value);
-            const op = document.getElementById('operator').value;
+            // White sclera
+            ctx.fillStyle = 'white';
+            ctx.beginPath(); ctx.arc(eyeBaseX - 5, -3, 4.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(eyeBaseX + 5, -3, 4.5, 0, Math.PI*2); ctx.fill();
+
+            // Black pupils (looking slightly towards movement if jumping)
+            let pupilShiftX = (faceScale > 0 ? 1 : -1) * (Math.abs(faceScale) > 0.5 ? 1.5 : 0);
             
-            if (isNaN(a) || isNaN(b)) {
-                explanationEl.textContent = "Please enter valid numbers.";
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath(); ctx.arc(eyeBaseX - 5 + pupilShiftX, -3, 2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(eyeBaseX + 5 + pupilShiftX, -3, 2, 0, Math.PI*2); ctx.fill();
+
+            // Tiny smile
+            if (Math.abs(faceScale) > 0.5) {
+                ctx.beginPath();
+                ctx.arc(eyeBaseX, 4, 3, 0.2 * Math.PI, 0.8 * Math.PI);
+                ctx.strokeStyle = '#0f172a';
+                ctx.lineWidth = 1.5;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+            }
+
+            ctx.restore();
+        }
+
+        let lastTime = 0;
+        function animateLoop(time) {
+            if (!lastTime) lastTime = time;
+            const deltaTime = time - lastTime;
+            lastTime = time;
+
+            if (blob.animating) {
+                const animDuration = blob.animType === 'jump' ? 700 : 400; // ms
+                blob.animProgress += deltaTime / animDuration;
+
+                if (blob.animProgress >= 1) {
+                    // Animation finished
+                    blob.animProgress = 1;
+                    blob.animating = false;
+                    
+                    if (blob.animType === 'jump') {
+                        playSound('jump_land');
+                        trail.push({ startPos: blob.startPos, endPos: blob.targetPos });
+                        blob.pos = blob.targetPos; // lock in pos
+                    } else if (blob.animType === 'turn') {
+                        blob.face = blob.targetFace; // lock in face
+                    }
+                    
+                    nextBtn.disabled = false;
+                    prevBtn.disabled = false;
+                    
+                    // Automatically trigger next step if it's an auto-continue step
+                    const currentStepData = steps[currentStepIdx];
+                    if (currentStepData && currentStepData.autoContinue && currentStepIdx < steps.length - 1) {
+                        setTimeout(() => executeStep(currentStepIdx + 1), 200);
+                    }
+                }
+            }
+
+            drawScene();
+            requestAnimationFrame(animateLoop);
+        }
+
+        function generateSteps(n1, op, n2, result) {
+            steps = [];
+            
+            const addStep = (text, type, data, auto = false) => {
+                steps.push({ text, type, ...data, autoContinue: auto });
+            };
+
+            // Start State
+            addStep(`We want to calculate: <b>${n1} ${op} ${n2}</b>.<br>Let's start at 0, facing the positive numbers (right).`, 'setup', { pos: 0, face: 1 });
+
+            if (op === '+') {
+                if (n1 !== 0) {
+                    addStep(`First, jump to the first number: <b>${n1}</b>.`, 'jump', { targetPos: n1, face: 1 });
+                }
+                
+                addStep(`Addition (+) means we KEEP our current facing direction.`, 'info', {});
+                
+                if (n2 > 0) {
+                    addStep(`Adding a positive number (<b>${n2}</b>) means we jump FORWARD by ${n2}.`, 'jump', { targetPos: n1 + n2, face: 1 });
+                } else if (n2 < 0) {
+                    addStep(`Adding a negative number (<b>${n2}</b>) means we jump BACKWARD by ${Math.abs(n2)}.`, 'jump', { targetPos: n1 + n2, face: 1 });
+                } else {
+                    addStep(`Adding 0 means we stay put.`, 'info', {});
+                }
+                
+            } else if (op === '-') {
+                if (n1 !== 0) {
+                    addStep(`First, move to the first number: <b>${n1}</b>.`, 'jump', { targetPos: n1, face: 1 });
+                }
+                
+                addStep(`Subtraction (-) means we <span class="text-rose-400 font-bold">TURN AROUND</span> to face the negative direction!`, 'turn', { targetFace: -1 });
+                
+                if (n2 > 0) {
+                    addStep(`We subtract a positive number (<b>${n2}</b>). Because we turned around, walking forward moves us to the left!`, 'jump', { targetPos: n1 - n2, face: -1 });
+                } else if (n2 < 0) {
+                    addStep(`We subtract a negative number (<b>${n2}</b>). Walking BACKWARDS while facing left moves us to the RIGHT! This is why minus a negative makes a positive.`, 'jump', { targetPos: n1 - n2, face: -1 });
+                } else {
+                    addStep(`Subtracting 0 means we don't move.`, 'info', {});
+                }
+
+            } else if (op === '*') {
+                let startFace = n1 < 0 ? -1 : 1;
+                let dirText = startFace === 1 ? 'right (positive)' : '<span class="text-rose-400 font-bold">left (negative)</span>';
+                
+                addStep(`The first number (<b>${n1}</b>) tells us our facing direction. We face ${dirText}.`, 'turn', { targetFace: startFace });
+                addStep(`It also tells us to make <b>${Math.abs(n1)}</b> jumps.`, 'info', {});
+
+                if (n1 === 0 || n2 === 0) {
+                    addStep(`Since one number is 0, we make 0 jumps.`, 'info', {});
+                } else {
+                    let currPos = 0;
+                    const jumps = Math.abs(n1);
+                    const stepSize = Math.abs(n2);
+                    
+                    let explainText = "";
+                    if (n1 > 0 && n2 > 0) explainText = `Jump FORWARD by ${n2}.`;
+                    else if (n1 > 0 && n2 < 0) explainText = `The second number is negative. Jump BACKWARD by ${stepSize}.`;
+                    else if (n1 < 0 && n2 > 0) explainText = `Jump FORWARD while facing left.`;
+                    else if (n1 < 0 && n2 < 0) explainText = `The second number is negative. Jumping BACKWARD while facing left moves us to the RIGHT (Positive)!`;
+
+                    for (let i = 1; i <= jumps; i++) {
+                        let stepActual = (startFace === 1 ? (n2 > 0 ? stepSize : -stepSize) : (n2 > 0 ? -stepSize : stepSize));
+                        currPos += stepActual;
+                        let text = i === 1 ? explainText : `Jump ${i} of ${jumps}...`;
+                        addStep(text, 'jump', { targetPos: currPos, face: startFace });
+                    }
+                }
+            } else if (op === '/') {
+                if (n1 !== 0) {
+                    addStep(`Jump to our starting total: <b>${n1}</b>.`, 'jump', { targetPos: n1, face: 1 });
+                }
+                
+                addStep(`Division asks: How many jumps of size <b>${n2}</b> does it take to get back to 0?`, 'info', {});
+                
+                if (n1 % n2 !== 0) {
+                     addStep(`The answer is a decimal (<b>${result.toFixed(2)}</b>). For simplicity, we just show the final answer here.`, 'info', {});
+                } else {
+                    let curr = n1;
+                    const jumps = Math.abs(result);
+                    let actualStep = -n2 * Math.sign(result); 
+                    
+                    addStep(`Let's take jumps of size ${Math.abs(n2)} back towards 0. We'll face ${Math.sign(-n1) === 1 ? 'right' : 'left'}.`, 'turn', { targetFace: Math.sign(-n1) || 1 });
+
+                    for (let i = 1; i <= jumps; i++) {
+                        curr += actualStep;
+                        addStep(`Jump ${i}...`, 'jump', { targetPos: curr, face: blob.targetFace || 1 });
+                    }
+                    addStep(`It took ${jumps} jumps. Factoring in signs, the result is <b>${result}</b>.`, 'info', {});
+                }
+            }
+
+            // Final Result Step
+            addStep(`<span class="text-3xl font-extrabold text-sky-400">${n1} ${op} ${n2} = ${result}</span><br>Simulation Complete! Click 'Start' to try another.`, 'finish', {});
+        }
+
+        function executeStep(index) {
+            if (index < 0 || index >= steps.length) return;
+            
+            currentStepIdx = index;
+            const step = steps[index];
+            
+            // Update UI
+            stepCounter.innerText = `Step ${index + 1}/${steps.length}`;
+            explanationText.innerHTML = step.text;
+            
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === steps.length - 1;
+
+            if (step.type === 'setup') {
+                blob.pos = step.pos;
+                blob.face = step.face;
+                trail = [];
+                drawScene();
+            } 
+            else if (step.type === 'jump') {
+                blob.startPos = blob.pos;
+                blob.targetPos = step.targetPos;
+                blob.animType = 'jump';
+                blob.animProgress = 0;
+                blob.animating = true;
+                
+                nextBtn.disabled = true;
+                prevBtn.disabled = true;
+                playSound('jump_start');
+            }
+            else if (step.type === 'turn') {
+                if (blob.face !== step.targetFace) {
+                    blob.startFace = blob.face;
+                    blob.targetFace = step.targetFace;
+                    blob.animType = 'turn';
+                    blob.animProgress = 0;
+                    blob.animating = true;
+                    
+                    nextBtn.disabled = true;
+                    prevBtn.disabled = true;
+                    playSound('turn');
+                }
+            }
+            else if (step.type === 'finish') {
+                playSound('success');
+                startBtn.classList.remove('hidden'); // Show start button again
+                startBtn.innerText = "Restart with New Numbers";
+            }
+        }
+
+        function startSimulation(e) {
+            e.preventDefault();
+            initAudio();
+
+            const n1 = parseInt(num1Input.value, 10);
+            const n2 = parseInt(num2Input.value, 10);
+            const op = opSelect.value;
+
+            if (isNaN(n1) || isNaN(n2)) {
+                explanationText.innerHTML = `<span class="text-rose-500 font-bold">Please enter valid numbers.</span>`;
+                playSound('error');
+                return;
+            }
+            if (op === '/' && n2 === 0) {
+                explanationText.innerHTML = `<span class="text-rose-500 font-bold">Error: Cannot divide by zero!</span>`;
+                playSound('error');
                 return;
             }
 
+            // Calculate exact result
             let result;
-            animationQueue = [];
-            currentPos = 0;
+            if (op === '+') result = n1 + n2;
+            if (op === '-') result = n1 - n2;
+            if (op === '*') result = n1 * n2;
+            if (op === '/') result = n1 / n2;
 
-            if (op === '+') {
-                result = a + b;
-                updateScale(a, b, result);
-                animationQueue.push({ start: 0, end: a, progress: 0 });
-                animationQueue.push({ start: a, end: result, progress: 0 });
-                explanationEl.textContent = `Start at 0, jump to ${a}, then move ${b > 0 ? 'forward' : 'backward'} by ${Math.abs(b)} to reach ${result}.`;
-            } 
-            else if (op === '-') {
-                result = a - b;
-                updateScale(a, b, result);
-                animationQueue.push({ start: 0, end: a, progress: 0 });
-                animationQueue.push({ start: a, end: result, progress: 0 });
-                explanationEl.textContent = `Start at 0, jump to ${a}, then subtract ${b} (move ${b > 0 ? 'backward' : 'forward'}) to reach ${result}.`;
-            } 
-            else if (op === '*') {
-                result = a * b;
-                updateScale(a, b, result);
-                
-                let steps = Math.abs(a);
-                let stepSize = Math.abs(b);
-                let direction = (a < 0 && b < 0) ? 1 : ((a < 0 || b < 0) ? -1 : 1);
-                
-                let explanation = "";
-                if (a < 0 && b < 0) {
-                    explanation = `Multiplying a negative by a negative! We take the OPPOSITE of ${steps} negative jumps, moving forward. Result = ${result}.`;
-                } else if (a < 0) {
-                    explanation = `We take the opposite direction for ${steps} jumps of ${stepSize}. Moving backwards. Result = ${result}.`;
-                } else {
-                    explanation = `Taking ${steps} jumps of ${b}. Result = ${result}.`;
-                }
-                explanationEl.textContent = explanation;
-
-                let curr = 0;
-                for (let i = 0; i < steps; i++) {
-                    let next = curr + (stepSize * direction);
-                    animationQueue.push({ start: curr, end: next, progress: 0 });
-                    curr = next;
-                }
-                if (steps === 0) {
-                    animationQueue.push({ start: 0, end: 0, progress: 0 });
-                }
-            } 
-            else if (op === '/') {
-                if (b === 0) {
-                    explanationEl.textContent = "Cannot divide by zero!";
-                    return;
-                }
-                result = a / b;
-                updateScale(a, b, result);
-                
-                explanationEl.textContent = `Dividing ${a} by ${b}. Jumping directly to the result: ${result.toFixed(2)}.`;
-                animationQueue.push({ start: 0, end: result, progress: 0 });
+            // Calculate viewing bounds dynamically to ensure everything fits
+            let pts = [0, n1, result];
+            if (op === '*') {
+                for(let i=1; i<=Math.abs(n1); i++) pts.push(i * n2 * Math.sign(n1));
             }
+            let min = Math.min(...pts);
+            let max = Math.max(...pts);
+            let padding = Math.max(Math.ceil((max - min) * 0.15), 3);
+            
+            minBound = min - padding;
+            maxBound = max + padding;
 
-            if (!currentAnim && animationQueue.length > 0) {
-                currentAnim = animationQueue.shift();
+            // Generate the teaching steps
+            generateSteps(n1, op, n2, result);
+
+            // Update UI State
+            startBtn.classList.add('hidden');
+            playbackControls.classList.remove('hidden');
+            stepCounter.classList.remove('hidden');
+            
+            // Execute step 0 instantly
+            executeStep(0);
+        }
+
+        nextBtn.addEventListener('click', () => {
+            if (!blob.animating && currentStepIdx < steps.length - 1) {
+                executeStep(currentStepIdx + 1);
             }
         });
 
-        // Offline Download Feature
-        document.getElementById('downloadBtn').addEventListener('click', () => {
-            const htmlContent = document.documentElement.outerHTML;
-            const blob = new Blob([htmlContent], { type: 'text/html' });
-            const url = URL.createObjectURL(blob);
+        prevBtn.addEventListener('click', () => {
+            if (!blob.animating && currentStepIdx > 0) {
+                // To safely step back, we rebuild state up to the previous step.
+                // An easy hack is to jump to setup, then fast-forward logical state.
+                let targetIdx = currentStepIdx - 1;
+                
+                // Fast forward logic without animation
+                blob.pos = 0;
+                blob.face = 1;
+                trail = [];
+                
+                for(let i=0; i<=targetIdx; i++){
+                    if (steps[i].type === 'setup') { blob.pos = steps[i].pos; blob.face = steps[i].face; }
+                    if (steps[i].type === 'jump') { 
+                        trail.push({ startPos: blob.pos, endPos: steps[i].targetPos });
+                        blob.pos = steps[i].targetPos; 
+                    }
+                    if (steps[i].type === 'turn') { blob.face = steps[i].targetFace; }
+                }
+                
+                drawScene();
+                
+                // Update UI visually
+                executeStep(targetIdx); 
+                // executeStep triggers anim if it's a jump/turn, so let's force it completed
+                blob.animating = false; 
+                if(steps[targetIdx].type === 'jump') blob.pos = steps[targetIdx].targetPos;
+                if(steps[targetIdx].type === 'turn') blob.face = steps[targetIdx].targetFace;
+                drawScene();
+            }
+        });
+
+        form.addEventListener('submit', startSimulation);
+
+        function downloadApp() {
+            // Clone document and clean states for fresh offline file
+            const clone = document.documentElement.cloneNode(true);
+            
+            const expText = clone.querySelector('#explanation-text');
+            if (expText) expText.innerHTML = `Set your numbers and operation, then click <span class="text-sky-400 font-bold">Start Simulation</span> to begin learning!`;
+            
+            const pbc = clone.querySelector('#playback-controls');
+            if (pbc) pbc.classList.add('hidden');
+            
+            const sc = clone.querySelector('#step-counter');
+            if (sc) sc.classList.add('hidden');
+            
+            const sb = clone.querySelector('#start-btn');
+            if (sb) {
+                sb.classList.remove('hidden');
+                sb.innerHTML = `<span>Start Simulation</span><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>`;
+            }
+
+            const html = "<!DOCTYPE html>\n" + clone.outerHTML;
+            const blobData = new Blob([html], { type: 'text/html' });
+            const url = URL.createObjectURL(blobData);
+            
             const a = document.createElement('a');
             a.href = url;
-            a.download = 'number-line-sim.html';
+            a.download = 'math-stepper.html';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
+        }
+
+        // Initialize canvas and loop on load
+        window.addEventListener('DOMContentLoaded', () => {
+            resizeCanvas();
+            requestAnimationFrame(animateLoop);
+            
+            // Draw initial empty state
+            drawScene();
         });
 
-        // Initialize animation loop
-        requestAnimationFrame(animate);
     </script>
 </body>
 </html>
